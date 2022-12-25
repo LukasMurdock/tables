@@ -4,7 +4,7 @@
 	},
 	"scripts": {
 		"prebuild": "rm -rf dist",
-		"dev": "parcel src/index.html",
-		"build": "npm run prebuild && parcel build src/index.html"
+		"dev": "parcel serve ./src/index.html",
+		"build": "npm run prebuild && parcel build ./src/index.html"
 	}
 }

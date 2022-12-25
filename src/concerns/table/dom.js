@@ -255,8 +255,7 @@ export function TableDom(tableId) {
 				let input = cell.children[0];
 				let text = input.value;
 				let textLength = text.length > columnMinWidth ? text.length : columnMinWidth;
-				colMaxChars = json.colMaxChars[columnIndex] || columnMinWidth;
-
+				let colMaxChars = json.colMaxChars[columnIndex] ?? columnMinWidth;
 				if (textLength > colMaxChars) {
 					json.colMaxChars[columnIndex] = textLength;
 				}
