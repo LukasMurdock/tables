@@ -5,6 +5,6 @@
 	"scripts": {
 		"prebuild": "rm -rf dist",
 		"dev": "parcel serve ./src/index.html",
-		"build": "npm run prebuild && parcel build ./src/index.html"
+		"build": "npm run prebuild && parcel build ./src/index.html && rsync -r ./src/public/ dist/"
 	}
 }
