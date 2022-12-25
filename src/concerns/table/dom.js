@@ -238,7 +238,7 @@ export function TableDom(tableId) {
 	function toJson() {
 		let table = document.getElementById(tableId);
 		let rows = table.rows;
-		let columnMinWidth = 3;
+		let columnMinWidth = 0;
 		let json = {
 			data: [],
 			// Column alignment
@@ -255,7 +255,7 @@ export function TableDom(tableId) {
 				let input = cell.children[0];
 				let text = input.value;
 				let textLength = text.length > columnMinWidth ? text.length : columnMinWidth;
-				let colMaxChars = json.colMaxChars[columnIndex] ?? columnMinWidth;
+				let colMaxChars = json.colMaxChars[columnIndex] || columnMinWidth;
 				if (textLength > colMaxChars) {
 					json.colMaxChars[columnIndex] = textLength;
 				}
