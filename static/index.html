@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Tables</title>
+		<style>
+			table,
+			tr {
+				border-collapse: collapse;
+				width: 100%;
+				overflow: scroll;
+			}
+
+			td {
+				margin: 0;
+				padding: 0;
+			}
+
+			td input {
+				padding: 10px;
+				width: 100%;
+				max-width: 100%;
+				outline: none;
+				background-color: transparent;
+				text-align: left;
+				border: 1px solid #222;
+				box-sizing: border-box;
+				-webkit-box-sizing: border-box;
+				-moz-box-sizing: border-box;
+			}
+			/* Input with attribute 'selected' */
+			td input:focus,
+			td input[selected] {
+				background-color: #fef9c3;
+			}
+
+			.text-left {
+				text-align: left;
+			}
+
+			.text-right {
+				text-align: right;
+			}
+
+			.text-center {
+				text-align: center;
+			}
+
+			#table-controls {
+				display: flex;
+				flex-direction: row;
+				justify-content: start;
+				align-items: left;
+				margin: 10px 0;
+			}
+
+			.flex-right {
+				margin-left: auto;
+			}
+
+			/* font mono */
+			#generated {
+				/* margin: 10px 0; */
+				padding: 10px;
+				white-space: pre-wrap;
+				overflow: scroll;
+				background-color: #222;
+				color: #fff;
+				font-family: monospace;
+			}
+
+			.hidden {
+				display: none;
+			}
+
+			.warning {
+				color: #ef4444;
+			}
+		</style>
+		<!-- <script src="index.js"></script> -->
+		<script src="table-dom.js"></script>
+		<script src="markdown.js"></script>
+		<script src="table-storage.js"></script>
+	</head>
+
+	<body>
+		<div id="table-controls">
+			<fieldset>
+				<legend>Align</legend>
+				<button mutation="alignLeft">Left</button>
+				<button mutation="alignCenter">Center</button>
+				<button mutation="alignRight">Right</button>
+			</fieldset>
+			<fieldset>
+				<legend>Insert</legend>
+				<button mutation="insertRow">Row</button>
+				<button mutation="insertColumn">Column</button>
+			</fieldset>
+			<fieldset>
+				<legend class="warning">Delete</legend>
+				<button mutation="deleteRow">Row</button>
+				<button mutation="deleteColumn">Column</button>
+				<button mutation="resetTable">Clear</button>
+			</fieldset>
+			<button id="undoButton" mutation="undo" class="hidden">Undo</button>
+			<fieldset class="flex-right">
+				<legend>Generate</legend>
+				<button generation="markdown">Markdown</button>
+				<!-- <button onClick="getFormatted();">Get Formatted</button> -->
+				<button generation="html">HTML</button>
+				<button generation="json">JSON</button>
+				<button mutation="">Save</button>
+				<!-- <button onClick="">HTML</button> -->
+			</fieldset>
+		</div>
+
+		<!-- Table start -->
+		<table id="table"></table>
+		<!-- Table end -->
+
+		<pre id="generated"></pre>
+		<fieldset>
+			<legend>Options</legend>
+			<!-- Checkbox option to Generate on change -->
+			<label>
+				<input
+					type="checkbox"
+					id="generate-on-change"
+					name="generate-on-change"
+					value="generate-on-change"
+				/>
+				Generate on change
+			</label>
+		</fieldset>
+
+		<footer>
+			<p>No ads, no trackers. Just kilobytes of fun.</p>
+			<button id="clearStorage">Clear local history storage</button>
+		</footer>
+
+		<script>
+			let tableControlsEl = document.getElementById('table-controls');
+			tableControlsEl.addEventListener('click', function (event) {
+				let isButton = event.target.nodeName === 'BUTTON';
+				if (!isButton) return;
+				let mutation = event.target.getAttribute('mutation');
+
+				if (mutation) {
+					if (mutation === 'undo') {
+						undo();
+						return;
+					}
+					mutate(mutation);
+					return;
+				}
+				let generation = event.target.getAttribute('generation');
+				console.log('generate event');
+				console.log(generation);
+				if (generation) {
+					generate(generation);
+					return;
+				}
+			});
+
+			let tableDomId = 'table';
+			let dom = tableDom(tableDomId, {
+				beforeKeypressAction: () => {
+					// save state before keypress
+					saveState();
+				},
+				/**
+				 * @param {KeyboardEvent} event
+				 */
+				onKeypress: (event) => {
+					// if event k is z and ctrl is pressed
+					if (event.key === 'z' && event.metaKey === true) {
+						undo();
+					}
+					// const generateOnChange = document.getElementById('generate-on-change').checked;
+					// if (generateOnChange) {
+					// 	generate('markdown');
+					// } else {
+					// 	console.log('generate on change is off');
+					// }
+				}
+			});
+
+			let localStorageKey = 'tableData';
+			let storage = tableStorage(localStorageKey);
+
+			let lastActionStorageKey = 'lastAction';
+
+			let format = {
+				markdown: MarkdownTable()
+			};
+
+			let defaultTable = {
+				data: [
+					['Let’s get table’n', ''],
+					['', ''],
+					['', ''],
+					['', '']
+					// ['', '', '', ''],
+					// ['', '', '', '']
+				],
+				alignment: []
+			};
+
+			function useHistory() {
+				let value = {
+					undo: []
+					// redo: []
+				};
+
+				function getValue() {
+					return value;
+				}
+
+				function setValue(newValue) {
+					value = newValue;
+				}
+
+				return [getValue, setValue];
+			}
+
+			function undo() {
+				let undoButton = document.getElementById('undoButton');
+				undoButton.classList.add('hidden');
+				let lastAction = JSON.parse(localStorage.getItem(lastActionStorageKey));
+				console.log(lastAction);
+				if (lastAction) {
+					console.log(lastAction.data);
+					dom.fromJson(lastAction.data);
+					localStorage.removeItem(lastActionStorageKey);
+				}
+			}
+
+			function generate(type) {
+				let generatedElement = document.getElementById('generated');
+				let tableJson = dom.toJson();
+				storage.save(tableJson);
+				switch (type) {
+					case 'markdown':
+						// Add attribute 'format' 'markdown' to generated element
+						// to be used in CSS to style the element.
+						generatedElement.setAttribute('format', 'markdown');
+						generatedElement.innerText = format.markdown.get(tableJson);
+						break;
+					case 'json':
+						generatedElement.setAttribute('format', 'json');
+						generatedElement.innerText = JSON.stringify(tableJson, null, 2);
+						break;
+					default:
+						break;
+				}
+			}
+
+			/**
+			 * A reducer function to handle saving last dom mutation action to local storage.
+			 * @param {string} action
+			 */
+			function mutate(action) {
+				// Get table data and save to local storage before performing action.
+				localStorage.setItem(
+					lastActionStorageKey,
+					JSON.stringify({
+						data: dom.toJson(),
+						action: action
+					})
+				);
+
+				let undoButton = document.getElementById('undoButton');
+				undoButton.classList.remove('hidden');
+				switch (action) {
+					// Alignment
+					case 'alignLeft':
+						dom.align('left');
+						break;
+					case 'alignCenter':
+						dom.align('center');
+						break;
+					case 'alignRight':
+						dom.align('right');
+						break;
+					// Insert
+					case 'insertRow':
+						dom.insertRow();
+						break;
+					case 'insertColumn':
+						dom.insertColumn();
+						break;
+					// Delete
+					case 'deleteRow':
+						dom.deleteRow();
+						break;
+					case 'deleteColumn':
+						dom.deleteColumn();
+						break;
+					case 'resetTable':
+						let reset = confirm('Are you sure you want to clear?');
+						if (reset) {
+							dom.fromJson(defaultTable);
+						}
+						break;
+					default:
+						console.log('Action not found');
+				}
+				storage.save(dom.toJson());
+			}
+
+			// function generate(action) {
+			// 	let generateElement = document.getElementById('generated');
+			// 	switch (action) {
+			// 		case 'markdown':
+			// 			generateElement.innerHTML = format.markdown.get(dom.toJson());
+			// 			break;
+			// 		default:
+			// 			console.log('Action not found');
+			// 	}
+			// }
+
+			// Load table data from local storage.
+			dom.fromJson(storage.load(defaultTable));
+		</script>
+
+		<script>
+			function getColumnWidths() {
+				let columnPadding = 2;
+				let table = document.getElementById('table');
+				let rows = table.rows;
+				let columnWidths = [];
+				for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+					let cols = rows[rowIndex].cells;
+					for (let columnIndex = 0; columnIndex < cols.length; columnIndex++) {
+						let cell = rows[rowIndex].cells[columnIndex];
+						let input = cell.children[0];
+						let text = input.value;
+						columnWidths[columnIndex] = Math.max(
+							columnWidths[columnIndex] || 0,
+							text.length + columnPadding
+						);
+					}
+				}
+				return columnWidths;
+			}
+
+			function getFormatted() {
+				let table = document.getElementById('table');
+				let rows = table.rows;
+				let markdown = '';
+				let columnWidths = getColumnWidths();
+				console.log(columnWidths);
+				for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+					let cols = rows[rowIndex].cells;
+					for (let columnIndex = 0; columnIndex < cols.length; columnIndex++) {
+						let cell = rows[rowIndex].cells[columnIndex];
+						let input = cell.children[0];
+						let text = input.value;
+						let paddingReq = columnWidths[columnIndex] - text.length;
+						if (paddingReq > 2) {
+							let leftPad = ' '.repeat(paddingReq / 2);
+							let rightPad = ' '.repeat(columnWidths[columnIndex] - leftPad);
+							console.log({ paddingReq, text });
+							let paddedText = leftPad + text + rightPad;
+							markdown += `| ${paddedText}`;
+						} else {
+							markdown += `| ${text}`;
+						}
+						// if (align == 'left') {
+						// 	markdown += `| ${paddedText}`;
+						// } else if (align == 'right') {
+						// 	markdown += `| ${paddedText} `;
+						// } else {
+						// 	markdown += `| ${paddedText} `;
+						// }
+					}
+					markdown += '|\n';
+					if (rowIndex == 0) {
+						for (let columnIndex = 0; columnIndex < cols.length; columnIndex++) {
+							let cell = rows[rowIndex].cells[columnIndex];
+							let input = cell.children[0];
+							let align = input.getAttribute('align');
+							if (align == 'left') {
+								markdown += '|:---';
+							} else if (align == 'right') {
+								markdown += '|---:';
+							} else {
+								markdown += '|:---:';
+							}
+						}
+						markdown += '|\n';
+					}
+				}
+				console.log(markdown);
+			}
+
+			function getCompact() {
+				let table = document.getElementById('table');
+				let rows = table.rows;
+				let cols = rows[0].cells;
+				let markdown = '';
+				for (let i = 0; i < rows.length; i++) {
+					for (let j = 0; j < cols.length; j++) {
+						let cell = rows[i].cells[j];
+						let input = cell.children[0];
+						let text = input.value;
+						let align = input.getAttribute('align');
+						if (align == 'left') {
+							markdown += `| ${text}`;
+						} else if (align == 'right') {
+							markdown += `| ${text} `;
+						} else {
+							markdown += `| ${text} `;
+						}
+					}
+					markdown += '|\n';
+				}
+				console.log(markdown);
+			}
+		</script>
+	</body>
+</html>
