@@ -619,7 +619,7 @@ function NewTable(tableDomId, localStorageKey, defaultTable) {
     };
 }
 
-},{"./dom.js":"bAa6T","./storage.js":"6Smic","./mutation.js":"9ELvz","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./generation.js":"2jY2P"}],"bAa6T":[function(require,module,exports) {
+},{"./dom.js":"bAa6T","./storage.js":"6Smic","./mutation.js":"9ELvz","./generation.js":"2jY2P","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"bAa6T":[function(require,module,exports) {
 /**
  * Creates a state object.
  */ var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
@@ -1104,7 +1104,7 @@ function TableMutation(dom, storage) {
     };
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./last-action-storage.js":"8UoPN"}],"8UoPN":[function(require,module,exports) {
+},{"./last-action-storage.js":"8UoPN","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"8UoPN":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /**
@@ -1178,7 +1178,7 @@ function TableGeneration(dom, storage) {
     };
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3","./formats/markdown.js":"9cABV","./formats/html.js":"heL1V"}],"9cABV":[function(require,module,exports) {
+},{"./formats/markdown.js":"9cABV","./formats/html.js":"heL1V","@parcel/transformer-js/src/esmodule-helpers.js":"gkKU3"}],"9cABV":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 /**

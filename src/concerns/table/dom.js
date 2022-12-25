@@ -245,6 +245,7 @@ export function TableDom(tableId) {
 			alignment: [],
 			colMaxChars: []
 		};
+
 		for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
 			let row = rows[rowIndex];
 			let rowArray = [];
