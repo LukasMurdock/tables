@@ -54,8 +54,8 @@ export function markdownFormat(table = testObject) {
 				let align = table.alignment[columnIndex];
 
 				if (align == 'left') {
-					let lines = '-'.repeat(table.colMaxChars[columnIndex]);
-					markdown += `|:${lines}:`;
+					let lines = '-'.repeat(table.colMaxChars[columnIndex] + 1);
+					markdown += `|:${lines}`;
 				} else if (align == 'right') {
 					let lines = '-'.repeat(table.colMaxChars[columnIndex] + 1);
 					markdown += `|${lines}:`;
